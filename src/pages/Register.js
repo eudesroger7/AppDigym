@@ -1,42 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { View, Image, StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Picker } from '@react-native-picker/picker';
 
 import api from '../services/api';
-import isLoggedIn from '../utils/util.utils';
 
 import logo from '../../assets/logo.png';
 
-export default function Login({ navigation }) {
+export default function Register({ navigation }) {
 
     const [email, setEmail] = useState();
     const [password, setPassword] = useState();
+    const [name, setName] = useState();
+    const [gym, setGym] = useState();
     const [userType, setUserType] = useState();
+    const [gyms, setGyms] = useState([]);
 
     useEffect(() => {
         setUserType(navigation.getParam('userType'));
-        isLoggedIn().then(loggedIn => loggedIn && navigation.navigate('Gyms'));
-    }, [])
+        getGyms();
+    }, []);
 
-    async function handleSubmit() {
-        const responseToken = await api.post('/auth/token', {
-            email,
-            password
-        });
-        await AsyncStorage.setItem('token', JSON.stringify(responseToken.data));
-
-        const responseUser = await api.get('/auth/authenticated', {
-            headers: {
-                Authorization: `Bearer ${responseToken.data.access_token}`
-            }
-        });
-        await AsyncStorage.setItem('user', JSON.stringify(responseUser.data));
-
-        await AsyncStorage.setItem(userType == 1 ? 'student' : 'owner', userType == 1 ? JSON.stringify(responseUser.data.student) : JSON.stringify(responseUser.data.owner));
-
-        navigation.navigate('Gyms');
+    async function getGyms() {
+        const responseGyms = await api.get('/api/gyms');
+        setGyms(responseGyms.data.data);
     }
 
+    async function handleSubmit() {
+        const responseUser = await api.post('/api/users', {
+            email,
+            password,
+            name,
+            user_type_id: userType
+        });
+        if (userType == 1) {
+            const responseStudent = await api.post('/api/students', {
+                user_id: responseUser.data.id,
+                gym_id: gym
+            });
+        } else {
+            const responseOwner = await api.post('/api/owners', {
+                user_id: responseUser.data.id,
+                gym_id: gym
+            });
+        }
+        navigation.navigate('Login');
+    }
 
     return (
         <View style={styles.container}>
@@ -44,28 +53,58 @@ export default function Login({ navigation }) {
 
             <View style={styles.form}>
                 <Text style={styles.title}>
-                    Por favor, informe suas credenciais para continuar
+                    Preencha as informações corretamente
                 </Text>
 
+                <Text style={styles.label}>Nome Completo</Text>
                 <TextInput
                     style={styles.input}
-                    placeholder="E-MAIL"
-                    placeholderTextColor="#bbb"
+                    placeholderTextColor="#ccc"
+                    autoCorrect={false}
+                    autoCapitalize="words"
+                    textContentType="name"
+                    keyboardType="name-phone-pad"
+                    onChangeText={setName}
+                />
+                <Text style={styles.label}>E-mail</Text>
+                <TextInput
+                    style={styles.input}
+                    placeholderTextColor="#ccc"
                     autoCorrect={false}
                     autoCapitalize="none"
+                    textContentType="emailAddress"
                     keyboardType="email-address"
                     onChangeText={setEmail}
                 />
+                <Text style={styles.label}>Senha</Text>
                 <TextInput
                     style={styles.input}
-                    placeholder="SENHA"
-                    placeholderTextColor="#bbb"
+                    placeholderTextColor="#ccc"
                     textContentType="password"
                     autoCorrect={false}
+                    textContentType="password"
                     autoCapitalize="none"
                     secureTextEntry={true}
                     onChangeText={setPassword}
                 />
+                {userType == 1 &&
+                    <>
+                        <Text style={styles.label}>Academia</Text>
+
+                        <View style={styles.pickerView}>
+                            <Picker
+                                style={styles.picker}
+                                selectedValue={gym}
+                                mode={'dialog'}
+                                placeholder="Selecione sua Academia"
+                                onValueChange={setGym}>
+                                {gyms && gyms.map((gym) => {
+                                    return <Picker.Item key={gym.id} label={gym.name} value={gym.id} />
+
+                                })}
+                            </Picker>
+                        </View>
+                    </>}
                 <TouchableOpacity
                     style={styles.button}
                     onPress={handleSubmit}>
@@ -74,20 +113,12 @@ export default function Login({ navigation }) {
 
                 <View style={styles.register}>
                     <Text style={styles.subtitle}>
-                        Ainda não tem uma conta?
+                        Já tem uma conta?
                 </Text>
-                    <TouchableOpacity style={styles.link} onPress={() => navigation.navigate('Register', { userType })}>
-                        <Text style={styles.linkText}>Cadastre-se!</Text>
+                    <TouchableOpacity style={styles.link} onPress={() => navigation.navigate('Login', { userType })}>
+                        <Text style={styles.linkText}>Faça Login!</Text>
                     </TouchableOpacity>
                 </View>
-            </View>
-            <View style={styles.changeUserType}>
-                <Text style={styles.subtitle}>
-                    Não é um {userType == 1 ? 'Aluno' : 'Proprietário'}?
-                </Text>
-                <TouchableOpacity style={styles.link} onPress={() => setUserType(userType == 1 ? 2 : 1)}>
-                    <Text style={styles.linkText}>Acessar como {userType == 1 ? 'Proprietário' : 'Aluno'}</Text>
-                </TouchableOpacity>
             </View>
         </View>
     )
@@ -126,6 +157,9 @@ const styles = StyleSheet.create({
         marginTop: 30,
         textAlign: 'center'
     },
+    label: {
+        color: '#ddd'
+    },
     input: {
         borderBottomWidth: 1,
         borderBottomColor: '#fff',
@@ -133,7 +167,7 @@ const styles = StyleSheet.create({
         color: '#fff',
         marginBottom: 20,
         textTransform: 'uppercase',
-        height: 50
+        height: 30
     },
     button: {
         height: 50,
@@ -169,5 +203,13 @@ const styles = StyleSheet.create({
     },
     changeUserType: {
         marginTop: 40,
+    },
+    picker: {
+        color: '#ccc',
+        height: 50,
+    },
+    pickerView: {
+        borderBottomWidth: 1,
+        borderBottomColor: '#ddd'
     }
 });
