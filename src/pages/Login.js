@@ -3,7 +3,7 @@ import { View, Image, StyleSheet, Text, TextInput, TouchableOpacity } from 'reac
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import api from '../services/api';
-import isLoggedIn from '../utils/util.utils';
+import { isLoggedIn } from '../utils/util.utils';
 
 import logo from '../../assets/logo.png';
 
@@ -15,7 +15,13 @@ export default function Login({ navigation }) {
 
     useEffect(() => {
         setUserType(navigation.getParam('userType'));
-        isLoggedIn().then(loggedIn => loggedIn && navigation.navigate('Gyms'));
+        isLoggedIn().then(loggedIn => {
+            if (loggedIn) {
+                AsyncStorage.getItem('user').then(_user => {
+                    JSON.parse(_user).user_type_id == 1 ? navigation.navigate('Map') : navigation.navigate('Gyms');
+                })
+            }
+        });
     }, [])
 
     async function handleSubmit() {
@@ -34,7 +40,7 @@ export default function Login({ navigation }) {
 
         await AsyncStorage.setItem(userType == 1 ? 'student' : 'owner', userType == 1 ? JSON.stringify(responseUser.data.student) : JSON.stringify(responseUser.data.owner));
 
-        navigation.navigate('Gyms');
+        navigation.navigate(userType == 1 ? 'Map' : 'Gyms');
     }
 
 

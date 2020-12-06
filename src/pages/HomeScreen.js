@@ -1,14 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { View, Image, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import isLoggedIn from '../utils/util.utils';
+import { isLoggedIn } from '../utils/util.utils';
 
 import logo from '../../assets/logo.png';
 
 export default function HomeScreen({ navigation }) {
 
     useEffect(() => {
-        isLoggedIn().then(loggedIn => loggedIn && navigation.navigate('Gyms'));
+        isLoggedIn().then((loggedIn) => {
+            if (loggedIn) {
+                AsyncStorage.getItem('user').then(_user => {
+                    JSON.parse(_user).user_type_id == 1 ? navigation.navigate('Map') : navigation.navigate('Gyms');
+                })
+            }
+        });
     }, [])
 
     return (
