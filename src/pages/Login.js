@@ -38,9 +38,9 @@ export default function Login({ navigation }) {
         });
         await AsyncStorage.setItem('user', JSON.stringify(responseUser.data));
 
-        await AsyncStorage.setItem(userType == 1 ? 'student' : 'owner', userType == 1 ? JSON.stringify(responseUser.data.student) : JSON.stringify(responseUser.data.owner));
+        await AsyncStorage.setItem(responseUser.data.user_type_id == 1 ? 'student' : 'owner', responseUser.data.user_type_id == 1 ? JSON.stringify(responseUser.data.student) : JSON.stringify(responseUser.data.owner));
 
-        navigation.navigate(userType == 1 ? 'Map' : 'Gyms');
+        navigation.navigate(responseUser.data.user_type_id == 1 ? 'Map' : 'Gyms');
     }
 
 

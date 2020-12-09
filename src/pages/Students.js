@@ -31,6 +31,7 @@ export default function Students({ navigation }) {
                 }
                 style={styles.container}>
                 <Text style={styles.title}>Seus alunos</Text>
+                {students}
                 {
                     (students && students.length > 0)
                         ? students.map(student => (

@@ -15,6 +15,7 @@ export default function Register({ navigation }) {
     const [gym, setGym] = useState();
     const [userType, setUserType] = useState();
     const [gyms, setGyms] = useState([]);
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         setUserType(navigation.getParam('userType'));
@@ -27,6 +28,7 @@ export default function Register({ navigation }) {
     }
 
     async function handleSubmit() {
+        setSubmitting(true);
         const responseUser = await api.post('/api/users', {
             email,
             password,
@@ -44,6 +46,7 @@ export default function Register({ navigation }) {
                 gym_id: gym
             });
         }
+        setSubmitting(false);
         navigation.navigate('Login');
     }
 
@@ -107,8 +110,13 @@ export default function Register({ navigation }) {
                     </>}
                 <TouchableOpacity
                     style={styles.button}
+                    disabled={submitting}
                     onPress={handleSubmit}>
-                    <Text style={styles.buttonText}>Entrar</Text>
+                    {
+                        submitting
+                            ? <Text style={styles.buttonText}>Enviando...</Text>
+                            : <Text style={styles.buttonText}>Confirmar</Text>
+                    }
                 </TouchableOpacity>
 
                 <View style={styles.register}>
